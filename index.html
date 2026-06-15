@@ -233,6 +233,18 @@ tbody tr:hover { background: var(--primary-bg); }
 </style>
 </head>
 <body>
+
+<div id="crl-powers">
+ <div class="cp-in">
+  <span class="cp-brand"><b>CRL Intelligence</b> &mdash; now interactive: explore the graph, screen your vendors, ask the guide</span>
+  <span class="cp-act">
+   <a class="cp-b" href="https://crl-intelligence-graph-production.up.railway.app/explorer.html" target="_blank" rel="noopener">Explore the graph &#8599;</a>
+   <button type="button" class="cp-b" onclick="CRL.screen()">Screen your vendors</button>
+   <button type="button" class="cp-b cp-p" onclick="CRL.guide()">Ask the AI guide</button>
+  </span>
+ </div>
+</div>
+
 <div class="app">
   <!-- Sidebar -->
   <nav class="sidebar">
@@ -1177,5 +1189,77 @@ document.addEventListener('keydown', e => {
 // Initialize
 filterTable();
 </script>
+
+<style>
+#crl-powers{position:sticky;top:0;z-index:99999;background:linear-gradient(135deg,#4F46E5,#0EA5E9);
+ font-family:'Inter',-apple-system,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.14)}
+#crl-powers .cp-in{max-width:1240px;margin:0 auto;padding:9px 16px;display:flex;justify-content:space-between;
+ align-items:center;gap:12px;flex-wrap:wrap}
+#crl-powers .cp-brand{color:#fff;font-size:13.5px;opacity:.97}
+#crl-powers .cp-act{display:flex;gap:8px;flex-wrap:wrap}
+#crl-powers .cp-b{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.55);
+ border-radius:8px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;font-family:inherit;white-space:nowrap}
+#crl-powers .cp-b:hover{background:rgba(255,255,255,.30)}
+#crl-powers .cp-b.cp-p{background:#fff;color:#4F46E5}
+.crl-panel{position:fixed;right:18px;bottom:18px;width:360px;max-width:93vw;max-height:74vh;background:#fff;
+ border:1px solid #E5E7EB;border-radius:14px;box-shadow:0 18px 50px rgba(15,23,42,.22);z-index:100000;
+ display:none;flex-direction:column;font-family:'Inter',-apple-system,sans-serif}
+.crl-panel .crl-h{background:#4F46E5;color:#fff;padding:11px 14px;border-radius:14px 14px 0 0;font-weight:600;
+ font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.crl-panel .crl-h button{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1}
+.crl-panel .crl-b{padding:13px;overflow:auto;flex:1;font-size:14px;color:#111827}
+.crl-panel .crl-f{display:flex;gap:6px;padding:10px;border-top:1px solid #E5E7EB}
+.crl-panel .crl-f input{flex:1;border:1px solid #D1D5DB;border-radius:8px;padding:9px;font:inherit}
+.crl-panel .crl-f button,.crl-go{border:none;background:#4F46E5;color:#fff;border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;font-weight:600}
+.crl-m{margin:0 0 9px;line-height:1.5}.crl-m.crl-u{text-align:right}
+.crl-m.crl-u span{background:#4F46E5;color:#fff;padding:6px 10px;border-radius:12px 12px 2px 12px;display:inline-block}
+.crl-m.crl-g span{background:#EEF2FF;color:#1f2937;padding:6px 10px;border-radius:12px 12px 12px 2px;display:inline-block}
+.crl-note{color:#6B7280;font-size:12.5px;margin:0 0 8px}
+#crls textarea{width:100%;min-height:74px;border:1px solid #D1D5DB;border-radius:8px;padding:8px;font:inherit;margin-bottom:8px}
+.crl-hit{border-left:3px solid #F59E0B;padding:4px 10px;margin:6px 0;background:#FFFBEB;font-size:13px}
+.crl-clean{color:#6B7280;font-style:italic;padding:4px 10px;font-size:13px}
+</style>
+
+<div id="crlg" class="crl-panel">
+ <div class="crl-h"><span>AI Guide</span><button type="button" onclick="CRL.close('crlg')" aria-label="close">&times;</button></div>
+ <div class="crl-b" id="crlg-body"></div>
+ <div class="crl-f"><input id="crlg-in" placeholder="ask about the data&hellip;"><button type="button" onclick="CRL.send()">Send</button></div>
+</div>
+
+<div id="crls" class="crl-panel">
+ <div class="crl-h"><span>Screen your vendors</span><button type="button" onclick="CRL.close('crls')" aria-label="close">&times;</button></div>
+ <div class="crl-b">
+  <p class="crl-note">Paste your CDMO / vendor names (one per line). Flags any name on an FDA watch list with a confidence score and source. Educational, not regulatory advice.</p>
+  <textarea id="crls-in" placeholder="Acme Pharma Ltd&#10;Contoso CDMO Inc"></textarea>
+  <button type="button" class="crl-go" onclick="CRL.runScreen()">Screen</button>
+  <div id="crls-out"></div>
+ </div>
+</div>
+
+<script>
+(function(){
+ var API="https://crl-intelligence-graph-production.up.railway.app", SID='s'+Math.random().toString(36).slice(2);
+ function $(id){return document.getElementById(id);}
+ function esc(s){return (s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+ var CRL={
+  close:function(id){$(id).style.display='none';},
+  guide:function(){$('crls').style.display='none';$('crlg').style.display='flex';if(!CRL._o){CRL._o=1;CRL._chat('');}setTimeout(function(){$('crlg-in').focus();},50);},
+  screen:function(){$('crlg').style.display='none';$('crls').style.display='flex';},
+  add:function(who,t){var b=$('crlg-body');b.insertAdjacentHTML('beforeend','<p class="crl-m crl-'+who+'"><span>'+esc(t)+'</span></p>');b.scrollTop=b.scrollHeight;},
+  send:function(){var i=$('crlg-in'),m=i.value.trim();if(!m)return;i.value='';CRL.add('u',m);CRL._chat(m);},
+  _chat:async function(m){if(m)CRL.add('g','&hellip;');var d;try{var r=await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:SID,msg:m})});d=await r.json();}catch(e){d={text:'The guide is briefly offline &mdash; the graph and screener still work.'};}
+   if(m){var b=$('crlg-body');if(b.lastElementChild)b.lastElementChild.remove();}CRL.add('g',d.text||'Hello.');},
+  runScreen:async function(){var names=$('crls-in').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);if(!names.length)return;
+   var out=$('crls-out');out.innerHTML='<p class="crl-note">screening&hellip;</p>';var d;
+   try{var r=await fetch(API+'/api/screen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vendors:names})});d=await r.json();}catch(e){out.innerHTML='<p class="crl-note">screener briefly offline &mdash; try again shortly.</p>';return;}
+   var h='';(d.results||[]).forEach(function(v){if(v.status==='FLAGGED'){h+='<div class="crl-hit"><b>'+esc(v.vendor)+'</b>';v.hits.forEach(function(x){h+='<br>&bull; '+esc(x.list)+' &mdash; '+Math.round(x.confidence*100)+'% '+esc(x.level)+" (matched '"+esc(x.matched_firm||'')+"')";});h+='</div>';}else h+='<div class="crl-clean">'+esc(v.vendor)+' &mdash; no public watch-list match (not a clean bill)</div>';});
+   if(d.exposure)h+='<p style="margin-top:6px"><b>Exposure index: '+d.exposure.exposure_index+'</b> ('+esc(d.exposure.band)+'). Descriptive, not predictive.</p>';
+   out.innerHTML=h||'<p class="crl-note">no vendors</p>';}
+ };
+ window.CRL=CRL;
+ document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='crlg-in')CRL.send();});
+})();
+</script>
+
 </body>
 </html>
