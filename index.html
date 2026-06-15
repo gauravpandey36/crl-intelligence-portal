@@ -1218,10 +1218,16 @@ filterTable();
 #crls textarea{width:100%;min-height:74px;border:1px solid #D1D5DB;border-radius:8px;padding:8px;font:inherit;margin-bottom:8px}
 .crl-hit{border-left:3px solid #F59E0B;padding:4px 10px;margin:6px 0;background:#FFFBEB;font-size:13px}
 .crl-clean{color:#6B7280;font-style:italic;padding:4px 10px;font-size:13px}
+#crl-launch{position:fixed;right:18px;bottom:18px;z-index:99998;background:#4F46E5;color:#fff;border:none;
+ border-radius:999px;padding:12px 18px;font-family:'Inter',-apple-system,sans-serif;font-weight:600;font-size:14px;
+ cursor:pointer;box-shadow:0 10px 30px rgba(79,70,229,.4);display:flex;align-items:center;gap:8px}
+#crl-launch .dot{width:9px;height:9px;border-radius:50%;background:#34D399;box-shadow:0 0 0 3px rgba(52,211,153,.35)}
 </style>
 
+<button type="button" id="crl-launch" onclick="CRL.guide()"><span class="dot"></span> Ask the guide</button>
+
 <div id="crlg" class="crl-panel">
- <div class="crl-h"><span>AI Guide</span><button type="button" onclick="CRL.close('crlg')" aria-label="close">&times;</button></div>
+ <div class="crl-h"><span>Your guide</span><button type="button" onclick="CRL.close('crlg')" aria-label="close">&times;</button></div>
  <div class="crl-b" id="crlg-body"></div>
  <div class="crl-f"><input id="crlg-in" placeholder="ask about the data&hellip;"><button type="button" onclick="CRL.send()">Send</button></div>
 </div>
@@ -1241,10 +1247,11 @@ filterTable();
  var API="https://crl-intelligence-graph-production.up.railway.app", SID='s'+Math.random().toString(36).slice(2);
  function $(id){return document.getElementById(id);}
  function esc(s){return (s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+ function launcher(v){var l=$('crl-launch');if(l)l.style.display=v?'flex':'none';}
  var CRL={
-  close:function(id){$(id).style.display='none';},
-  guide:function(){$('crls').style.display='none';$('crlg').style.display='flex';if(!CRL._o){CRL._o=1;CRL._chat('');}setTimeout(function(){$('crlg-in').focus();},50);},
-  screen:function(){$('crlg').style.display='none';$('crls').style.display='flex';},
+  close:function(id){$(id).style.display='none';if($('crlg').style.display!=='flex'&&$('crls').style.display!=='flex')launcher(true);},
+  guide:function(){launcher(false);$('crls').style.display='none';$('crlg').style.display='flex';if(!CRL._o){CRL._o=1;CRL._chat('');}setTimeout(function(){$('crlg-in').focus();},50);},
+  screen:function(){launcher(false);$('crlg').style.display='none';$('crls').style.display='flex';},
   add:function(who,t){var b=$('crlg-body');b.insertAdjacentHTML('beforeend','<p class="crl-m crl-'+who+'"><span>'+esc(t)+'</span></p>');b.scrollTop=b.scrollHeight;},
   send:function(){var i=$('crlg-in'),m=i.value.trim();if(!m)return;i.value='';CRL.add('u',m);CRL._chat(m);},
   _chat:async function(m){if(m)CRL.add('g','&hellip;');var d;try{var r=await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:SID,msg:m})});d=await r.json();}catch(e){d={text:'The guide is briefly offline &mdash; the graph and screener still work.'};}
@@ -1258,6 +1265,8 @@ filterTable();
  };
  window.CRL=CRL;
  document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='crlg-in')CRL.send();});
+ // greet the visitor automatically — the AI is right there, asking
+ window.addEventListener('load',function(){setTimeout(function(){if(!CRL._o)CRL.guide();},1300);});
 })();
 </script>
 
